@@ -1,0 +1,24 @@
+## Interface: 120005
+## Title: Details! QuickBtnBar
+## Notes: Quick-switch button bar for Details! (display + segment). /dab for settings.
+## Notes-deDE: Schnellschalt-Buttonleiste fuer Details! (Anzeige + Segment). /dab fuer Einstellungen.
+## Author: Zmash
+## Version: 1.0.0
+## Dependencies: Details
+## SavedVariables: DetailsQuickBtnBarDB
+## IconTexture: Interface\Icons\ability_dualwield
+## X-License: MIT
+## X-Category: Combat
+## X-Website: https://www.curseforge.com/wow/addons/details-quickbtnbar
+
+Locale.lua
+Locales\enUS.lua
+Locales\deDE.lua
+Common.lua
+Brokers.lua
+DetailsAPI.lua
+Widgets.lua
+Bar.lua
+Settings.lua
+Minimap.lua
+Core.lua
