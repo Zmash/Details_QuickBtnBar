@@ -1,0 +1,21 @@
+# CurseForge / BigWigs packager configuration
+# Docs: https://github.com/BigWigsMods/packager
+
+# We do not embed libraries; LibSharedMedia-3.0 is provided at runtime by
+# Details! (our required dependency), so no externals are needed.
+enable-nolib-creation: no
+
+# Read the changelog from this file (attached to the CurseForge release),
+# but it is excluded from the shipped addon via "ignore" below.
+manual-changelog:
+  filename: CHANGELOG.md
+  markup-type: markdown
+
+# Files that should NOT be part of the packaged addon.
+# LICENSE is intentionally kept (MIT requires it to be shipped); Media/ is
+# kept because the icon is used at runtime.
+ignore:
+  - README.md
+  - CHANGELOG.md
+  - .gitignore
+  - .github
