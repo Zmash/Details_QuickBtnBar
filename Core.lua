@@ -38,6 +38,19 @@ local function TryInit()
     end
     ns.DB = DetailsQuickBtnBarDB
 
+    -- Migration: alte Textur-/Font-Codes (Test-Builds) → LSM-Namen
+    do
+        local FONT_MAP = { default="Friz Quadrata", arial="Arial Narrow",
+                           morpheus="Morpheus", skurri="Skurri" }
+        local TEX_MAP  = { solid="Solid", blizzard="Blizzard" }
+        local bar = ns.DB.bar
+        if FONT_MAP[bar.font] then bar.font = FONT_MAP[bar.font] end
+        if TEX_MAP[bar.bgTexture] then bar.bgTexture = TEX_MAP[bar.bgTexture]
+        elseif bar.bgTexture == "smooth" or bar.bgTexture == "glaze" then
+            bar.bgTexture = "Solid"   -- alte, nicht-LSM Werte verwerfen
+        end
+    end
+
     -- Migration: altes Einzelfenster (window=Zahl) → Mengen-Form (windows)
     for _, d in ipairs(ns.BROKER_DEFS) do
         local cfg = ns.DB[d.key]

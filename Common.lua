@@ -71,6 +71,41 @@ function ns.ColorName(name, class)
     return "|cFF"..hex..short.."|r"
 end
 
+-- ── Geteilte Medien (LibSharedMedia-3.0) ────────────────────────
+-- Details! bringt LSM mit (Pflicht-Abhängigkeit). Darüber erreichen wir
+-- alle von anderen Addons registrierten Schriften & Statusbar-Texturen.
+local LSM = _G.LibStub and _G.LibStub("LibSharedMedia-3.0", true)
+ns.LSM = LSM
+
+-- Fallbacks, falls LSM (wider Erwarten) fehlt.
+ns.FALLBACK_FONT    = "Fonts\\FRIZQT__.TTF"
+ns.FALLBACK_TEXTURE = "Interface\\Buttons\\WHITE8X8"
+ns.DEFAULT_FONT     = "Friz Quadrata"   -- LSM-Standardname
+ns.DEFAULT_TEXTURE  = "Solid"
+ns.BAR_FONT_SIZE    = 10                -- entspricht GameFontNormalSmall
+
+if LSM then
+    -- "Solid" sicherstellen (manche Addons registrieren es bereits).
+    if not LSM:IsValid("statusbar", "Solid") then
+        LSM:Register("statusbar", "Solid", "Interface\\Buttons\\WHITE8X8")
+    end
+end
+
+function ns.GetBarFontPath()
+    local name = (ns.DB and ns.DB.bar.font) or ns.DEFAULT_FONT
+    if LSM then return LSM:Fetch("font", name) or LSM:Fetch("font", ns.DEFAULT_FONT) end
+    return ns.FALLBACK_FONT
+end
+
+function ns.GetBarTexturePath()
+    local name = (ns.DB and ns.DB.bar.bgTexture) or ns.DEFAULT_TEXTURE
+    if LSM then return LSM:Fetch("statusbar", name) or LSM:Fetch("statusbar", ns.DEFAULT_TEXTURE) end
+    return ns.FALLBACK_TEXTURE
+end
+
+-- ── Anzeige-Modus pro Fenster: Icon / Label / Beides ────────────
+ns.DISPLAY_MODES = { "both", "icon", "label" }
+
 -- ── Scope / Zone ────────────────────────────────────────────────
 -- Beschriftungen kommen zur Laufzeit aus L["SCOPE_"..scope]
 ns.SCOPE_ORDER = { "always", "dungeon", "raid", "instance" }

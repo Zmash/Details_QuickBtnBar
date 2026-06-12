@@ -23,8 +23,9 @@ Since the bar only *switches* the Details! window (it doesn't read combat values
   - **Docked mode** – one bar attached on top of *each* visible Details! window, automatically following the window's width and position. Each bar controls its own window, so two windows can show e.g. Current DPS and Overall Deaths side by side.
 - **Per-window assignment** – choose for every broker on which window bar(s) it appears.
 - **Visibility scopes** – show a window's bar always, only in dungeons, only in raids, or in both.
+- **Per-window display mode** – show each window's buttons as icon only, label only, or icon + label.
 - **Drag & drop reorder** – unlock the bar and drag buttons to rearrange them.
-- **Customizable look** – accent color (defaults to your class color), background opacity, vertical offset.
+- **Customizable look** – accent color (defaults to your class color), background opacity and texture, button font (textures and fonts via LibSharedMedia, with live preview), vertical offset.
 - **Minimap button** – quick access to the settings (can be disabled).
 - **Localized** – English and German included; uses your client language by default, manually selectable in the options.
 

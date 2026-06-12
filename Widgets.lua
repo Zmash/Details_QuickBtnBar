@@ -197,6 +197,123 @@ function ns.MakeDropdown(parent, w, options, onSelect)
     return d
 end
 
+-- Medien-Dropdown (LibSharedMedia): scrollbare Liste mit Vorschau.
+-- mediaType = "font" | "statusbar". Werte sind LSM-Namen (Strings).
+-- onSelect(name) wird beim Auswählen aufgerufen.
+function ns.MakeMediaDropdown(parent, w, mediaType, onSelect)
+    local LSM = ns.LSM
+    local d = ns.MakeBtn(parent, "", w, 20)
+    d._lbl:ClearAllPoints()
+    d._lbl:SetPoint("LEFT",8,0); d._lbl:SetPoint("RIGHT",-16,0)
+    d._lbl:SetJustifyH("LEFT")
+    local arrow = d:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+    arrow:SetPoint("RIGHT",-6,0); arrow:SetText("v"); arrow:SetTextColor(1,1,1,0.45)
+
+    -- Vorschau-Textur als Innenfüllung des geschlossenen Buttons (nur statusbar).
+    -- ARTWORK-Sublevel 1, damit sie über der MakeBtn-Innenfläche (ARTWORK 0) liegt,
+    -- aber unter dem OVERLAY-Label.
+    local prev
+    if mediaType == "statusbar" then
+        prev = d:CreateTexture(nil,"ARTWORK",nil,1)
+        prev:SetPoint("TOPLEFT",1,-1); prev:SetPoint("BOTTOMRIGHT",-1,1)
+    end
+
+    local ITEM_H, MAXROWS = 22, 10
+
+    -- Aufklapp-Liste mit Rahmen + ScrollFrame
+    local list = CreateFrame("Frame", nil, d)
+    list:SetFrameStrata("FULLSCREEN_DIALOG")
+    list:SetPoint("TOPLEFT", d, "BOTTOMLEFT", 0, -2)
+    local lbg = list:CreateTexture(nil,"BACKGROUND")
+    lbg:SetAllPoints(); lbg:SetColorTexture(E_BG_R,E_BG_G,E_BG_B,0.98)
+    local lbrd = list:CreateTexture(nil,"BORDER")
+    lbrd:SetAllPoints(); lbrd:SetColorTexture(1,1,1,E_BTN_BRD_A)
+    local lbgIn = list:CreateTexture(nil,"ARTWORK")
+    lbgIn:SetPoint("TOPLEFT",1,-1); lbgIn:SetPoint("BOTTOMRIGHT",-1,1)
+    lbgIn:SetColorTexture(E_BG_R,E_BG_G,E_BG_B,1)
+
+    local scroll = CreateFrame("ScrollFrame", nil, list)
+    scroll:SetPoint("TOPLEFT",1,-1); scroll:SetPoint("BOTTOMRIGHT",-1,1)
+    local content = CreateFrame("Frame", nil, scroll)
+    content:SetWidth(w-2)
+    scroll:SetScrollChild(content)
+    scroll:EnableMouseWheel(true)
+    scroll:SetScript("OnMouseWheel", function(self, delta)
+        local maxS = math.max(0, content:GetHeight() - self:GetHeight())
+        local nv = math.min(maxS, math.max(0, self:GetVerticalScroll() - delta*ITEM_H*2))
+        self:SetVerticalScroll(nv)
+    end)
+    list:Hide()
+
+    d._items = {}
+    local function Rebuild()
+        local names = (LSM and LSM:List(mediaType)) or {}
+        local rows  = #names
+        content:SetHeight(math.max(rows*ITEM_H, 1))
+        local visible = math.min(math.max(rows,1), MAXROWS)
+        list:SetSize(w, visible*ITEM_H + 2)
+        scroll:SetVerticalScroll(0)
+        for i, name in ipairs(names) do
+            local it = d._items[i]
+            if not it then
+                it = CreateFrame("Button", nil, content)
+                it:SetSize(w-2, ITEM_H)
+                local hov = it:CreateTexture(nil,"HIGHLIGHT")
+                hov:SetAllPoints(); hov:SetColorTexture(1,1,1,0.10)
+                if mediaType == "statusbar" then
+                    local tex = it:CreateTexture(nil,"BACKGROUND")
+                    tex:SetPoint("TOPLEFT",2,-2); tex:SetPoint("BOTTOMRIGHT",-2,2)
+                    it._tex = tex
+                end
+                it._lbl = it:CreateFontString(nil,"OVERLAY")
+                it._lbl:SetPoint("LEFT",8,0)
+                d._items[i] = it
+            end
+            it:SetPoint("TOPLEFT", 0, -(i-1)*ITEM_H)
+            local path = LSM and LSM:Fetch(mediaType, name)
+            if mediaType == "font" then
+                it._lbl:SetFont(path or ns.FALLBACK_FONT, 14, "")
+                it._lbl:SetText(name); it._lbl:SetTextColor(1,1,1,0.9)
+            else
+                it._lbl:SetFont(ns.FALLBACK_FONT, 12, "OUTLINE")
+                it._lbl:SetText(name); it._lbl:SetTextColor(1,1,1,0.95)
+                if it._tex and path then
+                    it._tex:SetTexture(path)
+                    it._tex:SetVertexColor(E_BG_R, E_BG_G, E_BG_B, 0.95)
+                end
+            end
+            it:SetScript("OnClick", function()
+                list:Hide()
+                if onSelect then onSelect(name) end
+            end)
+            it:Show()
+        end
+        for j = #names+1, #d._items do d._items[j]:Hide() end
+    end
+
+    d:SetScript("OnClick", function()
+        if list:IsShown() then list:Hide() else Rebuild(); list:Show() end
+    end)
+    d:SetScript("OnHide", function() list:Hide() end)
+
+    -- Aktuellen Wert im geschlossenen Button samt Vorschau anzeigen
+    d.SetValue = function(_, name)
+        d._lbl:SetText(name or "")
+        if mediaType == "font" then
+            local path = LSM and LSM:Fetch("font", name)
+            d._lbl:SetFont(path or ns.FALLBACK_FONT, 12, "")
+        elseif prev then
+            local path = LSM and LSM:Fetch("statusbar", name)
+            if path then
+                prev:SetTexture(path); prev:SetVertexColor(E_BG_R,E_BG_G,E_BG_B,0.9)
+            else
+                prev:SetTexture(nil)
+            end
+        end
+    end
+    return d
+end
+
 -- Separator
 function ns.MakeSep(parent, fromX, toX, y, a)
     local t = parent:CreateTexture(nil,"ARTWORK")

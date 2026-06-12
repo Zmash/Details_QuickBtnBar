@@ -43,6 +43,12 @@ local function RefreshSettings()
         settingsFrame._langDD:SetTexts(getText)
         settingsFrame._langDD:SetValue(DB.bar.language or "auto", getText)
     end
+    if settingsFrame._texDD then
+        settingsFrame._texDD:SetValue(DB.bar.bgTexture or ns.DEFAULT_TEXTURE)
+    end
+    if settingsFrame._fontDD then
+        settingsFrame._fontDD:SetValue(DB.bar.font or ns.DEFAULT_FONT)
+    end
     settingsFrame._winInfoLbl:SetText(string.format(L.ACTIVE_WINDOWS, maxWin))
     if settingsFrame._colorSwatch then
         local r,g,b = GetAccent(); settingsFrame._colorSwatch:SetColorTexture(r,g,b,1)
@@ -62,9 +68,14 @@ local function RefreshSettings()
             for scope, btn in pairs(wr.btns) do
                 btn:Show(); btn:SetActive(scope == cur)
             end
+            local dcur = (DB.bar.winDisplay and DB.bar.winDisplay[i]) or "both"
+            for mode, db in pairs(wr.dispBtns or {}) do
+                db:Show(); db:SetActive(mode == dcur)
+            end
         else
             wr.lbl:Hide()
             for _, btn in pairs(wr.btns) do btn:Hide() end
+            for _, db in pairs(wr.dispBtns or {}) do db:Hide() end
         end
     end
 
@@ -295,18 +306,32 @@ local function BuildSettingsFrame()
     end)
     PlaceRight(mmToggle, 2, secTop, 2, 18)
 
-    -- Zeile 3: Sprache
+    -- Zeile 3: Sprache | Hintergrund-Textur
     OptLabel(L.LANGUAGE, 1, secTop, 3)
     local langDD = MakeDropdown(f, 150, ns.LANG_OPTIONS, function(value)
         if ns.SetLanguage then ns.SetLanguage(value) end
     end)
     PlaceRight(langDD, 1, secTop, 3, 20)
 
+    OptLabel(L.TEXTURE, 2, secTop, 3)
+    local texDD = ns.MakeMediaDropdown(f, 150, "statusbar", function(value)
+        if ns.DB then ns.DB.bar.bgTexture = value; ns.RefreshBarBg(); RefreshSettings() end
+    end)
+    PlaceRight(texDD, 2, secTop, 3, 20)
+
+    -- Zeile 4: Schriftart
+    OptLabel(L.FONT, 1, secTop, 4)
+    local fontDD = ns.MakeMediaDropdown(f, 150, "font", function(value)
+        if ns.DB then ns.DB.bar.font = value; ns.RefreshBarFont(); RefreshSettings() end
+    end)
+    PlaceRight(fontDD, 1, secTop, 4, 20)
+
     f._lockToggle = lockToggle; f._lockLbl = lockLbl
     f._anchorToggle = anchorToggle; f._offsetBox = offBox; f._colorSwatch = swTex
     f._mmToggle = mmToggle; f._langDD = langDD
+    f._texDD = texDD; f._fontDD = fontDD
 
-    y = secTop - 4*OPT_H - SEC_GAP
+    y = secTop - 5*OPT_H - SEC_GAP
 
     -- ── FENSTER (Sichtbarkeit je Details-Fenster) ───────────────
     Section(L.SECTION_WINDOWS)
@@ -324,8 +349,26 @@ local function BuildSettingsFrame()
         local lbl=f:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
         lbl:SetPoint("TOPLEFT",PAD,ry-7); lbl:SetText(string.format(L.WINDOW, i)); lbl:SetWidth(80)
         lbl:SetJustifyH("LEFT"); lbl:SetTextColor(1,1,1,0.75)
+
+        -- Anzeige-Modus (Icon / Label / Beides) – linke Gruppe
+        local dispBtns = {}
+        local dx = PAD + 90
+        for _, mode in ipairs({ "icon", "label", "both" }) do
+            local db = MakeBtn(f, L["DISP_"..mode], 50, 19)
+            db:SetPoint("TOPLEFT", dx, ry-3)
+            db.win=i; db.mode=mode
+            db:SetScript("OnClick",function(self)
+                if ns.DB then
+                    ns.DB.bar.winDisplay = ns.DB.bar.winDisplay or {}
+                    ns.DB.bar.winDisplay[self.win] = self.mode
+                    ns.UpdateAll(); RefreshSettings()
+                end
+            end)
+            dispBtns[mode]=db; dx = dx + 50 + 4
+        end
+
+        -- Sichtbarkeits-Scope – rechte Gruppe, rechtsbündig
         local btns = {}
-        -- Buttons rechtsbündig, gleiche Breite, fester Abstand
         local bx = W - PAD - 4*SCOPE_BW - 3*6
         for _, scope in ipairs(SCOPE_ORDER) do
             local btn = MakeBtn(f, L["SCOPE_"..scope], SCOPE_BW, 19)
@@ -336,7 +379,7 @@ local function BuildSettingsFrame()
             end)
             btns[scope]=btn; bx = bx + SCOPE_BW + 6
         end
-        f._winScopeRows[i] = { lbl=lbl, btns=btns }
+        f._winScopeRows[i] = { lbl=lbl, btns=btns, dispBtns=dispBtns }
     end
     y = y - 4*WROW_H - SEC_GAP
 

@@ -19,11 +19,22 @@ local SetInstanceSegment = ns.SetInstanceSegment
 
 local E_BG_R, E_BG_G, E_BG_B = ns.E_BG_R, ns.E_BG_G, ns.E_BG_B
 local E_BRD_A                = ns.E_BRD_A
+local GetBarFontPath         = ns.GetBarFontPath
+local GetBarTexturePath      = ns.GetBarTexturePath
+local BAR_FONT_SIZE          = ns.BAR_FONT_SIZE
 
 -- Leiste (etwas dunkler als Panel)
 local BAR_H     = 22
 local ICON_SIZE = 14
 local PAD_H     = 4   -- Innenpolster je Button-Seite (klein = mehr passt rein)
+
+-- Hintergrund-Textur (getönt mit Panel-Farbe + Transparenz) auf eine Bar anwenden.
+local function ApplyBarBg(b)
+    if not b or not b.bg then return end
+    local a = (ns.DB and ns.DB.bar.bgAlpha) or 0.94
+    b.bg:SetTexture(GetBarTexturePath())
+    b.bg:SetVertexColor(E_BG_R, E_BG_G, E_BG_B, a)
+end
 
 -- ── State ───────────────────────────────────────────────────────
 local useOverall   = {}
@@ -87,9 +98,8 @@ local function MakeBarFrame(name)
 
     local bg = b:CreateTexture(nil,"BACKGROUND")
     bg:SetAllPoints()
-    local a = (_G.DetailsQuickBtnBarDB and _G.DetailsQuickBtnBarDB.bar and _G.DetailsQuickBtnBarDB.bar.bgAlpha) or 0.94
-    bg:SetColorTexture(E_BG_R,E_BG_G,E_BG_B,a)
-    b.bg = bg   -- für Live-Transparenz
+    b.bg = bg   -- für Live-Transparenz / Textur
+    ApplyBarBg(b)
 
     b.accent = b:CreateTexture(nil,"BORDER")
     b.accent:SetPoint("TOPLEFT"); b.accent:SetPoint("TOPRIGHT")
@@ -136,12 +146,17 @@ function ns.RefreshAccentOnBars()
     for _, b in pairs(bars) do upd(b, true) end
 end
 
--- Hintergrund-Transparenz aller Bars aktualisieren
-function ns.RefreshBgAlpha()
-    local a = (ns.DB and ns.DB.bar.bgAlpha) or 0.94
-    local function upd(b) if b and b.bg then b.bg:SetColorTexture(E_BG_R,E_BG_G,E_BG_B,a) end end
-    upd(freeBar)
-    for _, b in pairs(bars) do upd(b) end
+-- Hintergrund (Transparenz + Textur) aller Bars aktualisieren
+function ns.RefreshBarBg()
+    ApplyBarBg(freeBar)
+    for _, b in pairs(bars) do ApplyBarBg(b) end
+end
+ns.RefreshBgAlpha = ns.RefreshBarBg   -- Alias (Transparenz nutzt denselben Pfad)
+
+-- Schriftart-Wechsel: voller Neuaufbau wendet die Schrift auf alle
+-- Stücke an (Breite ändert sich → Re-Layout nötig).
+function ns.RefreshBarFont()
+    if ns.Relayout then ns.Relayout() end
 end
 
 -- ── Stücke (Pieces) – parentlos erstellt, später Bars zugeordnet ─
@@ -188,6 +203,37 @@ local function TogglePieceSegment(def, winIdx)
     C_Timer.After(0.30, function() if RefreshValues then RefreshValues() end end)
 end
 
+-- Anzeige-Modus dieses Stücks (Icon / Label / Beides) für sein Fenster.
+-- Frei-Bar (winIdx 0) folgt der Einstellung von Fenster 1.
+local function GetPieceDisplayMode(winIdx)
+    local idx = (winIdx == 0) and 1 or winIdx
+    local wd = ns.DB and ns.DB.bar.winDisplay
+    return (wd and wd[idx]) or "both"
+end
+
+-- Schrift, Icon-/Label-Sichtbarkeit und Breite eines Stücks setzen.
+-- selected=true → fette (OUTLINE) Schrift für das aktive Stück.
+local function LayoutPiece(f, selected)
+    local mode = GetPieceDisplayMode(f.winIdx)
+    local ico, txt = f.ico, f.txt
+    txt:SetFont(GetBarFontPath(), BAR_FONT_SIZE, selected and "OUTLINE" or "")
+
+    if mode == "icon" then
+        ico:Show(); txt:Hide()
+        ico:ClearAllPoints(); ico:SetPoint("LEFT", f, "LEFT", PAD_H, 0)
+        f:SetWidth(PAD_H + ICON_SIZE + PAD_H)
+    elseif mode == "label" then
+        ico:Hide(); txt:Show()
+        txt:ClearAllPoints(); txt:SetPoint("LEFT", f, "LEFT", PAD_H, 0)
+        f:SetWidth(PAD_H + txt:GetStringWidth() + PAD_H)
+    else  -- both
+        ico:Show(); txt:Show()
+        ico:ClearAllPoints(); ico:SetPoint("LEFT", f, "LEFT", PAD_H, 0)
+        txt:ClearAllPoints(); txt:SetPoint("LEFT", ico, "RIGHT", 3, 0)
+        f:SetWidth(PAD_H + ICON_SIZE + 3 + txt:GetStringWidth() + PAD_H)
+    end
+end
+
 -- Stück-Frame für (Broker, Fenster) – lazy erstellt. winIdx 0 = Frei-Bar.
 local function GetPiece(def, winIdx)
     local key = def.key
@@ -210,9 +256,9 @@ local function GetPiece(def, winIdx)
 
     -- Statisches Kurz-Label (reiner Schaltbutton)
     local txt = f:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
-    txt:SetPoint("LEFT",ico,"RIGHT",3,0); txt:SetTextColor(1,1,1,0.92)
+    txt:SetTextColor(1,1,1,0.92)
     txt:SetText(GetShortName(def.key)); f.txt = txt
-    f:SetWidth(PAD_H + ICON_SIZE + 3 + txt:GetStringWidth() + PAD_H)
+    LayoutPiece(f, false)   -- Schrift, Icon/Label-Modus, Breite
 
     f:SetScript("OnEnter",function(self)
         if self._dragging then return end
@@ -294,16 +340,13 @@ local function UpdatePieceSelection(f)
     local suffix = selected and (isOverall and " (O)" or " (C)") or ""
     f.txt:SetText(GetShortName(def.key) .. suffix)
 
-    local fp, fs = f.txt:GetFont()
     if selected then
         local r,g,b = GetAccent()
         f.txt:SetTextColor(r,g,b,1)
-        if fp then f.txt:SetFont(fp, fs, "OUTLINE") end   -- fetter
     else
         f.txt:SetTextColor(1,1,1,0.6)
-        if fp then f.txt:SetFont(fp, fs, "") end
     end
-    f:SetWidth(PAD_H + ICON_SIZE + 3 + f.txt:GetStringWidth() + PAD_H)
+    LayoutPiece(f, selected)   -- Schrift (fett wenn aktiv), Icon/Label-Modus, Breite
 end
 
 -- Frames innerhalb einer Bar links→rechts anordnen.
@@ -358,7 +401,11 @@ local function LayoutFree()
     end
     SortByOrder(keys)
     local frameList = {}
-    for _, k in ipairs(keys) do table.insert(frameList, pieces[k][0]) end
+    for _, k in ipairs(keys) do
+        local f = pieces[k][0]
+        LayoutPiece(f, false)   -- Schrift/Modus/Breite aktuell halten
+        table.insert(frameList, f)
+    end
 
     local w = LayoutFramesOnBar(freeBar, frameList)
     freeBar:SetWidth(math.max(w, 40))

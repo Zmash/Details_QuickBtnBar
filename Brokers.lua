@@ -84,8 +84,11 @@ local DEFAULTS = { bar = {
     offsetY         = 2,
     matchWidth      = false,  -- Breite an Details-Fenster angleichen (nur mit Anker sinnvoll)
     -- accentColor wird NICHT vorbelegt → ohne Wahl = Klassenfarbe (GetAccent)
-    bgAlpha         = 0.94,   -- Hintergrund-Transparenz der Leisten
+    bgAlpha         = 0.94,        -- Hintergrund-Transparenz der Leisten
+    bgTexture       = "Solid",     -- LSM-Statusbar-Name (siehe ns.GetBarTexturePath)
+    font            = "Friz Quadrata", -- LSM-Font-Name (siehe ns.GetBarFontPath)
     winScope        = { [1]="always", [2]="always", [3]="always", [4]="always" }, -- Sichtbarkeit pro Fenster
+    winDisplay      = { [1]="both", [2]="both", [3]="both", [4]="both" }, -- Icon/Label/Beides pro Fenster
     language        = "auto", -- "auto" = WoW-Clientsprache, sonst Locale-Code
     minimapHide     = false,  -- Minimap-Button ausblenden
     minimapAngle    = 220,    -- Position des Buttons auf dem Minimap-Ring (Grad)

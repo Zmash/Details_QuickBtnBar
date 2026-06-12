@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.1.0
+- Bar background texture selectable (via LibSharedMedia, with in-dropdown preview)
+- Bar font selectable (via LibSharedMedia, with in-dropdown preview)
+- Per-window display mode: Icon only, Label only, or Icon + Label
+
 ## 1.0.0
 Initial public release.
 
