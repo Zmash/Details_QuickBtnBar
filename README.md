@@ -80,10 +80,6 @@ In free mode it appears centered above the middle of your screen. Use `/dab unlo
 **Does it support more than one Details! window?**
 Yes, up to four. In docked mode every visible window gets its own bar.
 
-## Contact
-
-Questions, bug reports or suggestions: **info@zmash.eu**
-
 ## License
 
 MIT — see [LICENSE](LICENSE).
