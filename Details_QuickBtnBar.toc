@@ -1,7 +1,7 @@
 ## Interface: 120005
 ## Title: Details! QuickBtnBar
-## Notes: Quick-switch button bar for Details! (display + segment). /dab for settings.
-## Notes-deDE: Schnellschalt-Buttonleiste fuer Details! (Anzeige + Segment). /dab fuer Einstellungen.
+## Notes: Quick-switch button bar for Details! (display + segment). /dqb for settings.
+## Notes-deDE: Schnellschalt-Buttonleiste fuer Details! (Anzeige + Segment). /dqb fuer Einstellungen.
 ## Author: Zmash (info@zmash.eu)
 ## Version: 1.0.0
 ## Dependencies: Details

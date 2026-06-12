@@ -42,21 +42,19 @@ Each broker can be enabled/disabled individually.
 
 ## Usage
 
-Open the settings with the minimap button or one of the slash commands:
+Open the settings with the minimap button or the slash command:
 
 ```
-/dab
-/dqbb
-/detailsquickbtnbar
+/dqb
 ```
 
 Additional commands:
 
 | Command | Effect |
 |---|---|
-| `/dab lock` | Lock the bar |
-| `/dab unlock` | Unlock the bar (move / reorder) |
-| `/dab reset` | Reset all settings (reloads the UI) |
+| `/dqb lock` | Lock the bar |
+| `/dqb unlock` | Unlock the bar (move / reorder) |
+| `/dqb reset` | Reset all settings (reloads the UI) |
 
 ## Requirements
 
@@ -67,7 +65,7 @@ Additional commands:
 
 1. Download and unpack into `World of Warcraft\_retail_\Interface\AddOns\`, or install via the CurseForge app.
 2. Make sure Details! is installed and enabled.
-3. Log in and type `/dab`.
+3. Log in and type `/dqb`.
 
 ## FAQ
 
@@ -75,7 +73,7 @@ Additional commands:
 Yes. In instanced content Blizzard blocks combat-value access for addons, so the bar is deliberately a pure *switcher* for Details! rather than a second meter.
 
 **Where is the bar after installation?**
-In free mode it appears centered above the middle of your screen. Use `/dab unlock` to move it, or enable *Anchor to Details* to dock it to your Details! windows.
+In free mode it appears centered above the middle of your screen. Use `/dqb unlock` to move it, or enable *Anchor to Details* to dock it to your Details! windows.
 
 **Does it support more than one Details! window?**
 Yes, up to four. In docked mode every visible window gets its own bar.
