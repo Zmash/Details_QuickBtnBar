@@ -32,8 +32,7 @@ local function CreateMinimapButton()
 
     local icon = b:CreateTexture(nil, "BACKGROUND")
     icon:SetSize(20, 20)
-    icon:SetTexture("Interface\\Icons\\ability_dualwield")
-    icon:SetTexCoord(0.08, 0.92, 0.08, 0.92)
+    icon:SetTexture("Interface\\AddOns\\Details_QuickBtnBar\\Media\\icon.png")
     icon:SetPoint("TOPLEFT", 6, -6)
 
     b:SetScript("OnClick", function() ns.ToggleSettings() end)

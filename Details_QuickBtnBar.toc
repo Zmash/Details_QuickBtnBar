@@ -6,7 +6,7 @@
 ## Version: 1.0.0
 ## Dependencies: Details
 ## SavedVariables: DetailsQuickBtnBarDB
-## IconTexture: Interface\Icons\ability_dualwield
+## IconTexture: Interface\AddOns\Details_QuickBtnBar\Media\icon.png
 ## X-License: MIT
 ## X-Category: Combat
 ## X-Website: https://www.curseforge.com/wow/addons/details-quickbtnbar
