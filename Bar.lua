@@ -36,6 +36,60 @@ local function ApplyBarBg(b)
     b.bg:SetVertexColor(E_BG_R, E_BG_G, E_BG_B, a)
 end
 
+-- ── Reset-Button (X, immer rechts in der Bar) ───────────────────
+local RESET_W = 18   -- Breite des X-Knopfs
+
+-- Soll dieses Fenster den Reset-X zeigen? Frei-Bar (0) folgt Fenster 1.
+local function ShouldShowReset(winIdx)
+    local idx = (winIdx == 0) and 1 or winIdx
+    local wr = ns.DB and ns.DB.bar.winReset
+    return wr and wr[idx] and true or false
+end
+
+-- Reset-Knopf lazy an eine Bar hängen (rechtsbündig).
+local function EnsureResetButton(b)
+    if b.resetBtn then return b.resetBtn end
+    local rb = CreateFrame("Button", nil, b)
+    rb:SetSize(RESET_W, BAR_H)
+    rb:SetPoint("RIGHT", b, "RIGHT", 0, 0)
+    rb:SetFrameLevel(b:GetFrameLevel() + 5)
+
+    local hov = rb:CreateTexture(nil, "BACKGROUND")
+    hov:SetAllPoints(); hov:SetColorTexture(0.8, 0.1, 0.1, 0); rb._hov = hov
+
+    local x = rb:CreateFontString(nil, "OVERLAY", "GameFontNormal")
+    x:SetPoint("CENTER", 0, 0); x:SetText("X"); x:SetTextColor(1, 0.4, 0.4, 0.9); rb._x = x
+
+    rb:SetScript("OnEnter", function(self)
+        self._hov:SetColorTexture(0.8, 0.1, 0.1, 0.30)
+        self._x:SetTextColor(1, 0.75, 0.75, 1)
+        GameTooltip:SetOwner(self, "ANCHOR_TOP")
+        GameTooltip:AddLine(L.RESET_TITLE, 1, 1, 1)
+        GameTooltip:AddLine(L.RESET_DESC, 0.7, 0.7, 0.7)
+        GameTooltip:Show()
+    end)
+    rb:SetScript("OnLeave", function(self)
+        self._hov:SetColorTexture(0.8, 0.1, 0.1, 0)
+        self._x:SetTextColor(1, 0.4, 0.4, 0.9)
+        GameTooltip:Hide()
+    end)
+    rb:SetScript("OnClick", function() ns.ResetDetailsData() end)
+
+    b.resetBtn = rb
+    return rb
+end
+
+-- Reset-Knopf je nach Fenster-Einstellung zeigen/verstecken.
+-- Rückgabe: belegte Breite rechts (für die Stück-Anordnung).
+local function UpdateResetButton(b, winIdx)
+    if not ShouldShowReset(winIdx) then
+        if b.resetBtn then b.resetBtn:Hide() end
+        return 0
+    end
+    EnsureResetButton(b):Show()
+    return RESET_W
+end
+
 -- ── State ───────────────────────────────────────────────────────
 local useOverall   = {}
 local pieces       = {}     -- [key] = { [winIdx]=Frame }
@@ -408,7 +462,8 @@ local function LayoutFree()
     end
 
     local w = LayoutFramesOnBar(freeBar, frameList)
-    freeBar:SetWidth(math.max(w, 40))
+    local resetW = UpdateResetButton(freeBar, 0)
+    freeBar:SetWidth(math.max(w + resetW, 40))
 
     freeBar:ClearAllPoints()
     if ns.DB.bar.savedPt then
@@ -468,6 +523,7 @@ local function LayoutDocked()
                         table.insert(keys, def.key)
                     end
                 end
+                local resetW = UpdateResetButton(b, i)   -- X rechts (falls aktiv)
                 SortByOrder(keys)
                 local frameList = {}
                 for _, k in ipairs(keys) do
@@ -475,7 +531,7 @@ local function LayoutDocked()
                     UpdatePieceSelection(f)   -- Auswahl-Markierung (fett + O/C)
                     table.insert(frameList, f)
                 end
-                LayoutFramesOnBar(b, frameList, winW)
+                LayoutFramesOnBar(b, frameList, winW - resetW)
 
                 table.insert(layoutBars, { bar=b, winIdx=i, inst=inst, keys=keys })
             end
@@ -514,9 +570,10 @@ RefreshValues = function()
             local inst = entry.inst
             local df = inst and inst.baseframe
             if df then
-                local maxW = df:GetWidth()
-                b:SetWidth(maxW)
+                local fullW = df:GetWidth()
+                b:SetWidth(fullW)
                 b:SetShown(df:IsShown())
+                local maxW = fullW - UpdateResetButton(b, entry.winIdx)  -- Platz für X rechts
                 -- Auswahl-Markierung aktualisieren + Overflow prüfen
                 local x = 0
                 for _, key in ipairs(entry.keys) do

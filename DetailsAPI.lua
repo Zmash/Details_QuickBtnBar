@@ -64,6 +64,14 @@ function ns.IsWindowOverall(winIdx)
     return ns.InstanceIsOverall(ns.GetDetailsWin(winIdx))
 end
 
+-- Alle Combat-Daten löschen – exakt wie der Reset-Knopf von Details
+-- (aktuelle Segmente + Gesamt). Öffentliche Details-API.
+function ns.ResetDetailsData()
+    if Details and Details.ResetSegmentData then
+        pcall(Details.ResetSegmentData, Details)
+    end
+end
+
 -- Segment eines Details-Fensters auf Aktuell/Gesamt setzen – exakt wie
 -- Details' eigenes Segment-Menü (frames\segments\segments_functions.lua):
 --   Blizzard-Parser: SetSegmentType(0=Overall / 1=Current) + RefreshWindow

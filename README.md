@@ -24,6 +24,7 @@ Since the bar only *switches* the Details! window (it doesn't read combat values
 - **Per-window assignment** – choose for every broker on which window bar(s) it appears.
 - **Visibility scopes** – show a window's bar always, only in dungeons, only in raids, or in both.
 - **Per-window display mode** – show each window's buttons as icon only, label only, or icon + label.
+- **Reset button** – an optional "X" on the right of the bar that resets Details! data (handy when the bar covers Details!' own reset), toggleable per window.
 - **Drag & drop reorder** – unlock the bar and drag buttons to rearrange them.
 - **Customizable look** – accent color (defaults to your class color), background opacity and texture, button font (textures and fonts via LibSharedMedia, with live preview), vertical offset.
 - **Minimap button** – quick access to the settings (can be disabled).

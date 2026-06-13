@@ -72,10 +72,15 @@ local function RefreshSettings()
             for mode, db in pairs(wr.dispBtns or {}) do
                 db:Show(); db:SetActive(mode == dcur)
             end
+            if wr.resetBtn then
+                wr.resetBtn:Show()
+                wr.resetBtn:SetActive(DB.bar.winReset and DB.bar.winReset[i] or false)
+            end
         else
             wr.lbl:Hide()
             for _, btn in pairs(wr.btns) do btn:Hide() end
             for _, db in pairs(wr.dispBtns or {}) do db:Hide() end
+            if wr.resetBtn then wr.resetBtn:Hide() end
         end
     end
 
@@ -342,6 +347,18 @@ local function BuildSettingsFrame()
 
     local WROW_H   = 26
     local SCOPE_BW = 70   -- einheitliche Breite aller Scope-Buttons
+    local RESET_X  = 286  -- x-Position der Reset-Spalte
+    local SCOPE_X0 = W - PAD - 4*SCOPE_BW - 3*6
+
+    -- Spaltenüberschriften
+    local function WColH(text, x)
+        local l=f:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+        l:SetPoint("TOPLEFT", x, y); l:SetText(text); l:SetTextColor(0.5,0.5,0.5)
+    end
+    WColH(L.COL_DISPLAY,    PAD+90)
+    WColH(L.COL_RESET,      RESET_X)
+    WColH(L.COL_VISIBILITY, SCOPE_X0)
+    y = y - 16
 
     f._winScopeRows = {}
     for i = 1, 4 do
@@ -367,9 +384,21 @@ local function BuildSettingsFrame()
             dispBtns[mode]=db; dx = dx + 50 + 4
         end
 
+        -- Reset-X anzeigen ja/nein (Schaltknopf, zeigt das X der Leiste)
+        local resetBtn = MakeBtn(f, "X", 28, 19)
+        resetBtn:SetPoint("TOPLEFT", RESET_X, ry-3)
+        resetBtn.win=i
+        resetBtn:SetScript("OnClick",function(self)
+            if ns.DB then
+                ns.DB.bar.winReset = ns.DB.bar.winReset or {}
+                ns.DB.bar.winReset[self.win] = not ns.DB.bar.winReset[self.win]
+                ns.UpdateAll(); RefreshSettings()
+            end
+        end)
+
         -- Sichtbarkeits-Scope – rechte Gruppe, rechtsbündig
         local btns = {}
-        local bx = W - PAD - 4*SCOPE_BW - 3*6
+        local bx = SCOPE_X0
         for _, scope in ipairs(SCOPE_ORDER) do
             local btn = MakeBtn(f, L["SCOPE_"..scope], SCOPE_BW, 19)
             btn:SetPoint("TOPLEFT",bx,ry-3)
@@ -379,7 +408,7 @@ local function BuildSettingsFrame()
             end)
             btns[scope]=btn; bx = bx + SCOPE_BW + 6
         end
-        f._winScopeRows[i] = { lbl=lbl, btns=btns, dispBtns=dispBtns }
+        f._winScopeRows[i] = { lbl=lbl, btns=btns, dispBtns=dispBtns, resetBtn=resetBtn }
     end
     y = y - 4*WROW_H - SEC_GAP
 

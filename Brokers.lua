@@ -89,6 +89,7 @@ local DEFAULTS = { bar = {
     font            = "Friz Quadrata", -- LSM-Font-Name (siehe ns.GetBarFontPath)
     winScope        = { [1]="always", [2]="always", [3]="always", [4]="always" }, -- Sichtbarkeit pro Fenster
     winDisplay      = { [1]="both", [2]="both", [3]="both", [4]="both" }, -- Icon/Label/Beides pro Fenster
+    winReset        = { [1]=false, [2]=false, [3]=false, [4]=false }, -- Reset-X pro Fenster anzeigen
     language        = "auto", -- "auto" = WoW-Clientsprache, sonst Locale-Code
     minimapHide     = false,  -- Minimap-Button ausblenden
     minimapAngle    = 220,    -- Position des Buttons auf dem Minimap-Ring (Grad)

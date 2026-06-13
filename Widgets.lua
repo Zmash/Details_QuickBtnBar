@@ -218,9 +218,9 @@ function ns.MakeMediaDropdown(parent, w, mediaType, onSelect)
         prev:SetPoint("TOPLEFT",1,-1); prev:SetPoint("BOTTOMRIGHT",-1,1)
     end
 
-    local ITEM_H, MAXROWS = 22, 10
+    local ITEM_H, MAXROWS, SEARCH_H = 22, 10, 22
 
-    -- Aufklapp-Liste mit Rahmen + ScrollFrame
+    -- Aufklapp-Liste mit Rahmen + Suchfeld + ScrollFrame
     local list = CreateFrame("Frame", nil, d)
     list:SetFrameStrata("FULLSCREEN_DIALOG")
     list:SetPoint("TOPLEFT", d, "BOTTOMLEFT", 0, -2)
@@ -232,8 +232,20 @@ function ns.MakeMediaDropdown(parent, w, mediaType, onSelect)
     lbgIn:SetPoint("TOPLEFT",1,-1); lbgIn:SetPoint("BOTTOMRIGHT",-1,1)
     lbgIn:SetColorTexture(E_BG_R,E_BG_G,E_BG_B,1)
 
+    -- Suchfeld oben
+    local search = CreateFrame("EditBox", nil, list)
+    search:SetPoint("TOPLEFT",1,-1); search:SetPoint("TOPRIGHT",-1,-1)
+    search:SetHeight(SEARCH_H); search:SetAutoFocus(false)
+    search:SetFontObject(GameFontHighlightSmall); search:SetTextInsets(7,7,0,0)
+    local sLine = search:CreateTexture(nil,"OVERLAY")
+    sLine:SetPoint("BOTTOMLEFT",1,0); sLine:SetPoint("BOTTOMRIGHT",-1,0)
+    sLine:SetHeight(1); sLine:SetColorTexture(1,1,1,0.12)
+    local sHint = search:CreateFontString(nil,"ARTWORK","GameFontDisableSmall")
+    sHint:SetPoint("LEFT",8,0); sHint:SetText(ns.L.SEARCH); sHint:SetTextColor(0.5,0.5,0.5)
+
     local scroll = CreateFrame("ScrollFrame", nil, list)
-    scroll:SetPoint("TOPLEFT",1,-1); scroll:SetPoint("BOTTOMRIGHT",-1,1)
+    scroll:SetPoint("TOPLEFT", search, "BOTTOMLEFT", 0, 0)
+    scroll:SetPoint("BOTTOMRIGHT", -1, 1)
     local content = CreateFrame("Frame", nil, scroll)
     content:SetWidth(w-2)
     scroll:SetScrollChild(content)
@@ -243,15 +255,29 @@ function ns.MakeMediaDropdown(parent, w, mediaType, onSelect)
         local nv = math.min(maxS, math.max(0, self:GetVerticalScroll() - delta*ITEM_H*2))
         self:SetVerticalScroll(nv)
     end)
+    list:SetScript("OnHide", function() search:ClearFocus() end)  -- Tastatur freigeben
     list:Hide()
 
     d._items = {}
-    local function Rebuild()
-        local names = (LSM and LSM:List(mediaType)) or {}
+    -- Namen nach Filter (Teilstring, case-insensitiv) holen
+    local function FilteredNames(filter)
+        local all = (LSM and LSM:List(mediaType)) or {}
+        if not filter or filter == "" then return all end
+        local lf = filter:lower()
+        local out = {}
+        for _, n in ipairs(all) do
+            if n:lower():find(lf, 1, true) then out[#out+1] = n end
+        end
+        return out
+    end
+
+    local function Rebuild(filter)
+        local names = FilteredNames(filter)
         local rows  = #names
+        d._firstName = names[1]
         content:SetHeight(math.max(rows*ITEM_H, 1))
         local visible = math.min(math.max(rows,1), MAXROWS)
-        list:SetSize(w, visible*ITEM_H + 2)
+        list:SetSize(w, SEARCH_H + visible*ITEM_H + 2)
         scroll:SetVerticalScroll(0)
         for i, name in ipairs(names) do
             local it = d._items[i]
@@ -291,8 +317,30 @@ function ns.MakeMediaDropdown(parent, w, mediaType, onSelect)
         for j = #names+1, #d._items do d._items[j]:Hide() end
     end
 
+    -- Suchfeld-Verhalten
+    search:SetScript("OnTextChanged", function(self)
+        sHint:SetShown(self:GetText() == "")
+        Rebuild(self:GetText())
+    end)
+    search:SetScript("OnEscapePressed", function(self)
+        self:SetText(""); self:ClearFocus(); list:Hide()
+    end)
+    search:SetScript("OnEnterPressed", function(self)
+        if d._firstName then
+            list:Hide()
+            if onSelect then onSelect(d._firstName) end
+        end
+    end)
+
     d:SetScript("OnClick", function()
-        if list:IsShown() then list:Hide() else Rebuild(); list:Show() end
+        if list:IsShown() then
+            list:Hide()
+        else
+            search:SetText("")          -- frisch öffnen → ganze Liste
+            Rebuild("")
+            list:Show()
+            search:SetFocus()           -- direkt lostippen können
+        end
     end)
     d:SetScript("OnHide", function() list:Hide() end)
 

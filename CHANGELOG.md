@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.2.0
+- Reset button (X) on the bar to wipe Details! data, with a per-window toggle for showing it
+- Search box in the font and texture dropdowns to quickly filter long lists
+
 ## 1.1.0
 - Bar background texture selectable (via LibSharedMedia, with in-dropdown preview)
 - Bar font selectable (via LibSharedMedia, with in-dropdown preview)
