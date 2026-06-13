@@ -20,51 +20,9 @@ local function TryInit()
         C_Timer.After(1, TryInit); return
     end
 
-    -- SavedVariables aufsetzen (Tabellen-Defaults werden kopiert, nicht geteilt)
-    DetailsQuickBtnBarDB = DetailsQuickBtnBarDB or {}
-    for key, def in pairs(ns.DEFAULTS) do
-        DetailsQuickBtnBarDB[key] = DetailsQuickBtnBarDB[key] or {}
-        for field, val in pairs(def) do
-            if DetailsQuickBtnBarDB[key][field] == nil then
-                if type(val) == "table" then
-                    local copy = {}
-                    for k2, v2 in pairs(val) do copy[k2] = v2 end
-                    DetailsQuickBtnBarDB[key][field] = copy
-                else
-                    DetailsQuickBtnBarDB[key][field] = val
-                end
-            end
-        end
-    end
-    ns.DB = DetailsQuickBtnBarDB
-
-    -- Migration: alte Textur-/Font-Codes (Test-Builds) → LSM-Namen
-    do
-        local FONT_MAP = { default="Friz Quadrata", arial="Arial Narrow",
-                           morpheus="Morpheus", skurri="Skurri" }
-        local TEX_MAP  = { solid="Solid", blizzard="Blizzard" }
-        local bar = ns.DB.bar
-        if FONT_MAP[bar.font] then bar.font = FONT_MAP[bar.font] end
-        if TEX_MAP[bar.bgTexture] then bar.bgTexture = TEX_MAP[bar.bgTexture]
-        elseif bar.bgTexture == "smooth" or bar.bgTexture == "glaze" then
-            bar.bgTexture = "Solid"   -- alte, nicht-LSM Werte verwerfen
-        end
-    end
-
-    -- Migration: altes Einzelfenster (window=Zahl) → Mengen-Form (windows)
-    for _, d in ipairs(ns.BROKER_DEFS) do
-        local cfg = ns.DB[d.key]
-        if cfg and cfg.window then
-            cfg.windows = { [cfg.window] = true }
-            cfg.window = nil
-        end
-        if cfg and type(cfg.windows) ~= "table" then
-            cfg.windows = { [1] = true }
-        end
-    end
-
-    -- Gespeicherte Sprachwahl anwenden (DB ist jetzt verfügbar)
-    ns.SetActiveLocale()
+    -- Profile aufsetzen: ns.SV (Profile/Zuweisungen) + ns.DB (aktives Profil).
+    -- Übernimmt Default-Merge, Migrationen und Sprachwahl.
+    ns.SetupProfiles()
 
     -- Minimap-Button (sofern nicht deaktiviert)
     ns.UpdateMinimapButton()
@@ -86,6 +44,7 @@ evFrame:RegisterEvent("PLAYER_LOGIN")
 evFrame:RegisterEvent("PLAYER_ENTERING_WORLD")
 evFrame:RegisterEvent("PLAYER_REGEN_ENABLED")
 evFrame:RegisterEvent("ZONE_CHANGED_NEW_AREA")
+evFrame:RegisterEvent("PLAYER_SPECIALIZATION_CHANGED")
 
 evFrame:SetScript("OnEvent", function(_, event, arg1)
     if event == "ADDON_LOADED" and arg1 == "Details_QuickBtnBar" then
@@ -108,6 +67,12 @@ evFrame:SetScript("OnEvent", function(_, event, arg1)
 
     elseif event == "ZONE_CHANGED_NEW_AREA" then
         C_Timer.After(0.5, function() ns.UpdateAll(); ns.RefreshSettings() end)
+
+    elseif event == "PLAYER_SPECIALIZATION_CHANGED" then
+        -- Nur im Spec-Modus relevant: ggf. anderes Profil aktiv werden lassen
+        if initialized and ns.GetBindMode and ns.GetBindMode() == "spec" then
+            ns.ApplyActiveProfile(); ns.OnProfileChanged()
+        end
     end
 end)
 

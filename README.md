@@ -27,6 +27,7 @@ Since the bar only *switches* the Details! window (it doesn't read combat values
 - **Reset button** – an optional "X" on the right of the bar that resets Details! data (handy when the bar covers Details!' own reset), toggleable per window.
 - **Drag & drop reorder** – unlock the bar and drag buttons to rearrange them.
 - **Customizable look** – accent color (defaults to your class color), background opacity and texture, button font (textures and fonts via LibSharedMedia, with live preview), vertical offset.
+- **Profiles** – account-wide, per-character, or per-specialization settings profiles (profiles are created automatically; per-spec switching is live).
 - **Minimap button** – quick access to the settings (can be disabled).
 - **Localized** – English and German included; uses your client language by default, manually selectable in the options.
 

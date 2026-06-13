@@ -23,6 +23,21 @@ local E_BTN_BRD_A                        = ns.E_BTN_BRD_A
 
 local settingsFrame = nil
 
+-- Eingabedialog für ein neues Profil (kopiert das aktuelle).
+StaticPopupDialogs["DSB_NEW_PROFILE"] = {
+    text = "", button1 = ACCEPT, button2 = CANCEL,
+    hasEditBox = true, maxLetters = 32,
+    OnShow = function(self) self.editBox:SetText(""); self.editBox:SetFocus() end,
+    OnAccept = function(self) ns.CreateProfile(self.editBox:GetText(), true) end,
+    EditBoxOnEnterPressed = function(editBox)
+        local dialog = editBox:GetParent()
+        ns.CreateProfile(editBox:GetText(), true)
+        dialog:Hide()
+    end,
+    EditBoxOnEscapePressed = function(editBox) editBox:GetParent():Hide() end,
+    timeout = 0, whileDead = true, hideOnEscape = true,
+}
+
 local function RefreshSettings()
     local DB = ns.DB
     if not settingsFrame or not settingsFrame:IsShown() or not DB then return end
@@ -42,6 +57,22 @@ local function RefreshSettings()
         local getText = function(opt) return opt.text or L.LANG_AUTO end
         settingsFrame._langDD:SetTexts(getText)
         settingsFrame._langDD:SetValue(DB.bar.language or "auto", getText)
+    end
+    if settingsFrame._modeDD then
+        local getText = function(opt) return L["MODE_"..opt.value] end
+        settingsFrame._modeDD:SetTexts(getText)
+        settingsFrame._modeDD:SetValue(ns.GetBindMode(), getText)
+    end
+    local nameText = function(opt) return opt.text end
+    if settingsFrame._profDD then
+        settingsFrame._profDD:SetTexts(nameText)
+        settingsFrame._profDD:SetValue(ns.GetProfileName(), nameText)
+    end
+    if settingsFrame._specRows then
+        for _, r in ipairs(settingsFrame._specRows) do
+            r.dd:SetTexts(nameText)
+            r.dd:SetValue(ns.SV.assignments[r.key] or "Default", nameText)
+        end
     end
     if settingsFrame._texDD then
         settingsFrame._texDD:SetValue(DB.bar.bgTexture or ns.DEFAULT_TEXTURE)
@@ -474,13 +505,71 @@ local function BuildSettingsFrame()
     end
     y = y - #BROKER_DEFS*ROW_H
 
+    -- ── PROFIL (immer als letzte Sektion) ───────────────────────
+    y = y - SEC_GAP
+    Section(L.SECTION_PROFILES)
+    local pTop = y
+
+    -- Modus-Dropdown (Account / Charakter / Spec)
+    OptLabel(L.PROFILE_MODE, 1, pTop, 0)
+    local modeDD = MakeDropdown(f, 150, ns.MODE_OPTIONS, function(value) ns.SetBindMode(value) end)
+    PlaceRight(modeDD, 1, pTop, 0, 20)
+    f._modeDD = modeDD
+    f._profDD = nil; f._specRows = nil
+
+    -- Profil-Optionen (alle vorhandenen Profile)
+    local profOpts = {}
+    for _, n in ipairs(ns.ListProfiles()) do profOpts[#profOpts+1] = { value=n, text=n } end
+
+    local mode = ns.GetBindMode()
+    local rowsUsed = 1   -- Modus-Zeile
+    if mode ~= "spec" then
+        -- Account/Charakter: ein "Aktives Profil"-Dropdown
+        OptLabel(L.PROFILE, 2, pTop, 0)
+        local profDD = MakeDropdown(f, 150, profOpts, function(value) ns.AssignProfile(value) end)
+        PlaceRight(profDD, 2, pTop, 0, 20)
+        f._profDD = profDD
+    else
+        -- Spec: je Spezialisierung eine Zeile mit eigenem Profil-Dropdown
+        f._specRows = {}
+        for si, s in ipairs(ns.GetSpecList()) do
+            local sy = pTop - si*OPT_H
+            local ico = f:CreateTexture(nil,"OVERLAY")
+            ico:SetSize(18,18); ico:SetPoint("TOPLEFT", PAD, sy-6)
+            if s.icon then ico:SetTexture(s.icon); ico:SetTexCoord(0.07,0.93,0.07,0.93) end
+            local nl = f:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
+            nl:SetPoint("LEFT", ico, "RIGHT", 8, 0)
+            nl:SetText(s.name or ("Spec "..si)); nl:SetTextColor(1,1,1,0.8)
+            local dd = MakeDropdown(f, 180, profOpts, function(value)
+                ns.AssignProfileToKey(s.key, value)
+            end)
+            dd:SetPoint("TOPRIGHT", f, "TOPLEFT", W-PAD, sy - math.floor((OPT_H-20)/2))
+            f._specRows[si] = { dd=dd, key=s.key }
+        end
+        rowsUsed = 1 + #f._specRows
+    end
+
+    -- Verwaltungs-Buttons (Neu | Löschen | Reset) eine Zeile darunter
+    local by = (pTop - rowsUsed*OPT_H) - math.floor((OPT_H-20)/2)
+    local newBtn = MakeBtn(f, L.PROFILE_NEW, 90, 20); newBtn:SetPoint("TOPLEFT", PAD, by)
+    newBtn:SetScript("OnClick", function()
+        StaticPopupDialogs["DSB_NEW_PROFILE"].text = L.PROFILE_NEW_PROMPT
+        StaticPopup_Show("DSB_NEW_PROFILE")
+    end)
+    local delBtn = MakeBtn(f, L.PROFILE_DELETE, 90, 20); delBtn:SetPoint("LEFT", newBtn, "RIGHT", 8, 0)
+    delBtn:SetScript("OnClick", function() ns.DeleteProfile(ns.GetProfileName()) end)
+    local resBtn = MakeBtn(f, L.PROFILE_RESET, 90, 20); resBtn:SetPoint("LEFT", delBtn, "RIGHT", 8, 0)
+    resBtn:SetScript("OnClick", function() ns.ResetCurrentProfile() end)
+
+    y = pTop - (rowsUsed+1)*OPT_H - SEC_GAP
+
     -- Hinweis
     local hint=f:CreateFontString(nil,"OVERLAY","GameFontNormalSmall")
     hint:SetPoint("BOTTOM",0,12)
     hint:SetText(L.HINT)
     hint:SetTextColor(0.35,0.35,0.35)
 
-    f:SetHeight(-y + 34)
+    f:SetHeight(-y + 44)
 
     f:Hide(); settingsFrame=f
 end
@@ -501,14 +590,18 @@ function ns.ToggleSettings()
     end
 end
 
--- Sprache wechseln: Locale aktivieren und Einstellungsfenster neu aufbauen
--- (die Texte sind dort fest verdrahtet). Frames sind nicht löschbar – das
--- alte Fenster wird versteckt und ersetzt.
+-- Einstellungsfenster neu aufbauen, falls offen (Texte/Werte sind beim
+-- Bau fest verdrahtet). Frames sind nicht löschbar – altes wird versteckt.
+function ns.RebuildSettingsIfShown()
+    local wasShown = settingsFrame and settingsFrame:IsShown()
+    if settingsFrame then settingsFrame:Hide(); settingsFrame = nil end
+    if wasShown then ns.ShowSettings() end
+end
+
+-- Sprache wechseln: Locale aktivieren und Fenster neu aufbauen.
 function ns.SetLanguage(value)
     if not ns.DB then return end
     ns.DB.bar.language = value
     ns.SetActiveLocale()
-    local wasShown = settingsFrame and settingsFrame:IsShown()
-    if settingsFrame then settingsFrame:Hide(); settingsFrame = nil end
-    if wasShown then ns.ShowSettings() end
+    ns.RebuildSettingsIfShown()
 end

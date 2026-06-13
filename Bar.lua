@@ -96,6 +96,10 @@ local pieces       = {}     -- [key] = { [winIdx]=Frame }
 local bars         = {}     -- [winIdx] = Bar-Frame (Andock-Modus)
 local freeBar      = nil    -- einzelne Bar im Frei-Modus
 local isReordering = false  -- true während ein Stück per Drag umsortiert wird
+-- Selbst gemerkte Anzeige je Fenster: [winIdx] = { att=, sub= }.
+-- Details meldet das Sub-Attribut nach einem Attributwechsel unzuverlässig
+-- (oft nil), daher merken wir es selbst – konsistent zum SetDisplay-Aufruf.
+local winSel       = {}
 
 -- Letztes Layout-Ergebnis (für leichtes Werte-Update ohne Voll-Neuaufbau)
 local activeLayout = nil    -- { mode, bars={ {bar,winIdx,inst,keys} } }
@@ -224,11 +228,19 @@ local function ResolveTargetInstance(def, winIdx)
     return GetDetailsWin(1)
 end
 
+-- Merkt sich die zuletzt von UNS gesetzte Anzeige eines Fensters.
+local function RememberSelection(winIdx, def)
+    if winIdx and winIdx >= 1 then
+        winSel[winIdx] = { att = def.dAttr, sub = def.dSubAttr }
+    end
+end
+
 -- Linksklick: Details-Fenster auf das Attribut dieses Brokers schalten.
 local function SwitchPieceDisplay(def, winIdx)
     local inst = ResolveTargetInstance(def, winIdx)
     if inst and inst.SetDisplay then
         pcall(inst.SetDisplay, inst, nil, def.dAttr, def.dSubAttr)
+        RememberSelection(winIdx, def)
     end
 end
 
@@ -243,6 +255,7 @@ local function TogglePieceSegment(def, winIdx)
         local isOverall = InstanceIsOverall(inst)   -- parser-korrekte Erkennung
         SetInstanceSegment(inst, not isOverall)
         if inst.SetDisplay then pcall(inst.SetDisplay, inst, nil, def.dAttr, def.dSubAttr) end
+        RememberSelection(winIdx, def)
     else
         useOverall[def.key] = not useOverall[def.key]
         local inst = ResolveTargetInstance(def, winIdx)
@@ -383,8 +396,16 @@ local function UpdatePieceSelection(f)
         if inst then
             isOverall = InstanceIsOverall(inst)
             local att, sub = inst.GetDisplay and inst:GetDisplay()
-            if att == def.dAttr and (sub == nil or sub == def.dSubAttr) then
-                selected = true
+            local sel = winSel[winIdx]
+            if sel and att == sel.att then
+                -- Wir haben das Fenster zuletzt selbst geschaltet und es zeigt
+                -- noch dieses Hauptattribut → unser gemerktes Sub ist maßgeblich
+                -- (Details' sub ist hier unzuverlässig).
+                selected = (def.dAttr == sel.att and def.dSubAttr == sel.sub)
+            else
+                -- Kein Eigen-Status / Attribut extern geändert → Bestmögliche
+                -- Erkennung über Details (sub = nil ⇒ primäres Sub 1).
+                selected = (att == def.dAttr and (sub or 1) == def.dSubAttr)
             end
         end
     else

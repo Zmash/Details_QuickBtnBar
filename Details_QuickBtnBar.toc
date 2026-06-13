@@ -3,7 +3,7 @@
 ## Notes: Quick-switch button bar for Details! (display + segment). /dqb for settings.
 ## Notes-deDE: Schnellschalt-Buttonleiste fuer Details! (Anzeige + Segment). /dqb fuer Einstellungen.
 ## Author: Zmash (info@zmash.eu)
-## Version: 1.2.0
+## Version: 1.3.0
 ## Dependencies: Details
 ## SavedVariables: DetailsQuickBtnBarDB
 ## IconTexture: Interface\AddOns\Details_QuickBtnBar\Media\icon.png
@@ -16,6 +16,7 @@ Locales\enUS.lua
 Locales\deDE.lua
 Common.lua
 Brokers.lua
+Profiles.lua
 DetailsAPI.lua
 Widgets.lua
 Bar.lua

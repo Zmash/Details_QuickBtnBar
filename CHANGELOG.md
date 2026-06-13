@@ -1,5 +1,9 @@
 # Changelog
 
+## 1.3.0
+- Settings profiles: account-wide, per character, or per specialization (auto-creates profiles, per-spec list, binding mode stored per character)
+- Fixed button highlight: only the broker actually shown is marked (no more multiple/empty highlights)
+
 ## 1.2.0
 - Reset button (X) on the bar to wipe Details! data, with a per-window toggle for showing it
 - Search box in the font and texture dropdowns to quickly filter long lists

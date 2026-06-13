@@ -28,8 +28,8 @@ end
 
 -- Aktueller Akzentfarbwert. Ohne gespeicherte Farbe = Klassenfarbe.
 function ns.GetAccent()
-    if _G.DetailsQuickBtnBarDB and _G.DetailsQuickBtnBarDB.bar and _G.DetailsQuickBtnBarDB.bar.accentColor then
-        local c = _G.DetailsQuickBtnBarDB.bar.accentColor
+    if ns.DB and ns.DB.bar and ns.DB.bar.accentColor then
+        local c = ns.DB.bar.accentColor
         return c[1], c[2], c[3]
     end
     return GetClassColor()

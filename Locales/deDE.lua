@@ -3,6 +3,16 @@
 local _, ns = ...
 
 ns.RegisterLocale("deDE", {
+    SECTION_PROFILES = "PROFIL",
+    PROFILE_MODE     = "Profil-Modus",
+    MODE_account     = "Accountweit",
+    MODE_character   = "Pro Charakter",
+    MODE_spec        = "Pro Spezialisierung",
+    PROFILE          = "Aktives Profil",
+    PROFILE_NEW      = "Neu",
+    PROFILE_DELETE   = "Löschen",
+    PROFILE_RESET    = "Reset",
+    PROFILE_NEW_PROMPT = "Name für das neue Profil (kopiert das aktuelle):",
     SECTION_BAR     = "LEISTE",
     LOCKED          = "Gesperrt",
     UNLOCKED        = "Entsperrt",

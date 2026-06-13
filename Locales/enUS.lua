@@ -2,6 +2,16 @@
 local _, ns = ...
 
 ns.RegisterLocale("enUS", {
+    SECTION_PROFILES = "PROFILE",
+    PROFILE_MODE     = "Profile mode",
+    MODE_account     = "Account-wide",
+    MODE_character   = "Per character",
+    MODE_spec        = "Per specialization",
+    PROFILE          = "Active profile",
+    PROFILE_NEW      = "New",
+    PROFILE_DELETE   = "Delete",
+    PROFILE_RESET    = "Reset",
+    PROFILE_NEW_PROMPT = "Name for the new profile (copies the current one):",
     SECTION_BAR     = "BAR",
     LOCKED          = "Locked",
     UNLOCKED        = "Unlocked",

@@ -152,7 +152,6 @@ function ns.MakeDropdown(parent, w, options, onSelect)
     local ITEM_H = 20
     local list = CreateFrame("Frame", nil, d)
     list:SetFrameStrata("DIALOG")
-    list:SetPoint("TOPLEFT", d, "BOTTOMLEFT", 0, -2)
     list:SetSize(w, #options*ITEM_H + 2)
     local lbg = list:CreateTexture(nil,"BACKGROUND")
     lbg:SetAllPoints(); lbg:SetColorTexture(E_BG_R,E_BG_G,E_BG_B,0.98)
@@ -180,7 +179,18 @@ function ns.MakeDropdown(parent, w, options, onSelect)
         d._items[i] = it
     end
 
-    d:SetScript("OnClick", function() list:SetShown(not list:IsShown()) end)
+    d:SetScript("OnClick", function()
+        if list:IsShown() then list:Hide(); return end
+        -- Aufklapp-Richtung wählen: nach unten, außer dort ist zu wenig Platz.
+        list:ClearAllPoints()
+        local bottom = d:GetBottom()
+        if bottom and (bottom - list:GetHeight()) < 40 then
+            list:SetPoint("BOTTOMLEFT", d, "TOPLEFT", 0, 2)    -- nach oben
+        else
+            list:SetPoint("TOPLEFT", d, "BOTTOMLEFT", 0, -2)   -- nach unten
+        end
+        list:Show()
+    end)
     d:SetScript("OnHide",  function() list:Hide() end)
 
     -- Texte setzen/auffrischen (Werte können lokalisiert sein)
